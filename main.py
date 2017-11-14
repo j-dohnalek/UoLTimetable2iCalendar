@@ -26,6 +26,8 @@ USERNAME = '<USERNAME>'
 # Account password
 PASSWORD = '<PASSWORD>'
 
+# How many 28 days block to download?
+BLOCKS = 10
 
 def login():
     """ LOGIN TO WEBSITE """
@@ -56,7 +58,7 @@ def filter_schedules(opener):
     urls = []
     url = 'https://timetables.liv.ac.uk/Home/Next28Days'
 
-    for multiplier in range(0, 11):
+    for multiplier in range(0, BLOCKS):
         now = datetime.datetime.now() + datetime.timedelta(days=28*multiplier)
         next_date = now.strftime("%d%m%Y")
         urls.append(url + '?date={}'.format(next_date))
