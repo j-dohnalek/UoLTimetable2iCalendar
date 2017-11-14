@@ -71,6 +71,8 @@ def generate_ical(events, debug=False):
     ical += 'END:VCALENDAR' + CRLF
 
     directory = os.path.expanduser('~/Downloads/')
-    f = open(os.path.join(directory, 'uol_timetable.ics'), 'wb')
+    path = os.path.join(directory, 'uol_timetable.ics')
+    f = open(path, 'wb')
     f.write(ical)
     f.close()
+    print 'File saved at', path
