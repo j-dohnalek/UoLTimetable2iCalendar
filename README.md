@@ -11,6 +11,10 @@ Edit the lines in main.py
 ```python
 # University of Liverpool username
 USERNAME = '<USERNAME>'
+
 # Account password
 PASSWORD = '<PASSWORD>'
+
+# How many 28 days block to download?
+BLOCKS = 10
 ```
