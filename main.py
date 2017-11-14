@@ -52,10 +52,7 @@ def filter_schedules(opener):
     :param opener: access to the website including the session
     :return filtered list of all events
     """
-    lectures = []
-    labs = []
-    specials = []
-
+    events = []
     urls = []
     url = 'https://timetables.liv.ac.uk/Home/Next28Days'
 
@@ -72,14 +69,9 @@ def filter_schedules(opener):
         for link in soup.find_all('a'):
             if link.get('href')[:7] == 'Details':
                 event = Event(link.contents[1], link.contents[3].text)
-                if event.special and event.type == 'LEC':
-                    lectures.append(event)
-                elif event.special and event.type == 'LAB':
-                    labs.append(event)
-                else:
-                    specials.append(event)
+                events.append(event)
 
-    return [lectures, labs, specials]
+    return events
 
 
 def main():
@@ -88,7 +80,7 @@ def main():
     print "Filtering events"
     events = filter_schedules(session)
     print "Generating icalendar file"
-    ical.generate_ical(events, debug=True)
+    ical.generate_ical(events, True)
     print "All Done"
 
 ################################################################################
