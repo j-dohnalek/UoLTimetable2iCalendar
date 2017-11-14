@@ -14,7 +14,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 from datetime import datetime
-import re
 import hashlib
 
 # format of the outputted date of the lecture
@@ -27,21 +26,10 @@ PATTERN = r'([A-Z]{4})([0-9]{3})'
 
 class Event:
     """ Parse the all the key event information """
-
-    # Filter words from event name
-    __replace = ['(Lecture)', '(Laboratory)']
-
-    # Special lecture not matching standard lecture or Laboratory
-    __special = False
-
-    # Determine if the event is lecture or lab
-    __is_lecture = True
-
     # Not parsed information provided from the website
-    __full_name = None
+    __name = None
 
     # Raw website string
-    __raw_event_info = None
     __raw_event_time_info = None
 
     # Isolated module code
@@ -55,10 +43,8 @@ class Event:
 
     def __init__(self, module, timeinfo):
         """ Define the raw event info, event time """
-
         # EVENT NAME
-        self.__raw_event_info =  module.text.strip()
-        self.parse_module()
+        self.__name = module.text.strip()
         # EVENT TIME
         self.__raw_event_time_info = timeinfo.strip().replace('\r\n', '').split()
         self.parse_time()
@@ -77,28 +63,6 @@ class Event:
         self.__start = datetime.strptime(start_time, '%d %B %Y %H:%M').strftime(DATE_FORMAT)
         self.__end = datetime.strptime(end_time, '%d %B %Y %H:%M').strftime(DATE_FORMAT)
 
-    def parse_module(self):
-        """ Parse the raw event name to module code """
-
-        # Module code
-        module_split = self.__raw_event_info.split('-')
-        self.__module_code = module_split[0]
-        for s in self.__replace:
-            self.__module_code = self.__module_code.replace(s, '').strip()
-
-        # Pattern matches LLLLNNN i.e. COMP211 not special event else yes
-        pattern = re.compile(PATTERN)
-        self.__special = pattern.match(self.__module_code) is None
-
-        # Determine if lecture or Lab
-        self.__is_lecture = 'Lecture' in self.__raw_event_info
-
-        # Filter words from the event name
-        self.__replace.append(self.__module_code + ' -')
-        self.__name = self.__raw_event_info
-        for s in self.__replace:
-            self.__name = self.__name.replace(s, '').strip()
-
     @property
     def uid(self):
         """ Generate unique id """
@@ -106,19 +70,6 @@ class Event:
         m = hashlib.md5()
         m.update(s)
         return m.hexdigest()
-
-    @property
-    def type(self):
-        """ Lecture or lab """
-        if self.__is_lecture:
-            return 'LEC'
-        else:
-            return 'LAB'
-
-    @property
-    def module_code(self):
-        """ Standard module code """
-        return self.__module_code
 
     @property
     def name(self):
@@ -134,8 +85,3 @@ class Event:
     def end(self):
         """ end time of the lecture """
         return self.__end
-
-    @property
-    def special(self):
-        """ Special event (i.e. year in industry lecture) """
-        return self.__special
