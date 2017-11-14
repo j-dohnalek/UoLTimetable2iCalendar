@@ -26,6 +26,7 @@ USERNAME = '<USERNAME>'
 # Account password
 PASSWORD = '<PASSWORD>'
 
+
 def login():
     """ LOGIN TO WEBSITE """
     session = requests.Session()
@@ -51,33 +52,43 @@ def filter_schedules(opener):
     :param opener: access to the website including the session
     :return filtered list of all events
     """
-    resp = opener.open('https://timetables.liv.ac.uk/Home/Next28Days')
-    soup = BeautifulSoup(resp.read(), 'lxml')
-
     lectures = []
     labs = []
     specials = []
 
-    for link in soup.find_all('a'):
-        if link.get('href')[:7] == 'Details':
-            event = Event(link.contents[1], link.contents[3].text)
-            if event.special and event.type == 'LEC':
-                lectures.append(event)
-            elif event.special and event.type == 'LAB':
-                labs.append(event)
-            else:
-                specials.append(event)
+    urls = []
+    url = 'https://timetables.liv.ac.uk/Home/Next28Days'
+
+    for multiplier in range(0, 11):
+        now = datetime.datetime.now() + datetime.timedelta(days=28*multiplier)
+        next_date = now.strftime("%d%m%Y")
+        urls.append(url + '?date={}'.format(next_date))
+
+    for url in urls:
+        print 'Downloading', url
+        resp = opener.open(url)
+        soup = BeautifulSoup(resp.read(), 'lxml')
+
+        for link in soup.find_all('a'):
+            if link.get('href')[:7] == 'Details':
+                event = Event(link.contents[1], link.contents[3].text)
+                if event.special and event.type == 'LEC':
+                    lectures.append(event)
+                elif event.special and event.type == 'LAB':
+                    labs.append(event)
+                else:
+                    specials.append(event)
 
     return [lectures, labs, specials]
 
 
 def main():
     print "Attempting to log into the website"
-    opener = login()
+    session = login()
     print "Filtering events"
-    events = filter_schedules(opener)
+    events = filter_schedules(session)
     print "Generating icalendar file"
-    ical.generate_ical(events)
+    ical.generate_ical(events, debug=True)
     print "All Done"
 
 ################################################################################
