@@ -1,4 +1,4 @@
-# UoLTimetable2ICalender
+# UoLTimetable2ICalendar
 Automatically download lecture timetable for computer science students and generate iCalendar file
 The file is saved into the Downloads folder
 
