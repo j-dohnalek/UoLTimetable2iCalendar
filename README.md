@@ -1,6 +1,7 @@
 # UoLTimetable2iCalendar
 Automatically download lecture timetable for computer science students and generate iCalendar file.
 The file is saved into the Downloads folder
+<p>Tested on Ubuntu Linux 16.04</p>
 
 ## Available Information
 Module, Start Time, End Time, Room
