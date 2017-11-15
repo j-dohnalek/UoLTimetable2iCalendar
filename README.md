@@ -10,7 +10,10 @@ The file is saved into the Downloads folder
 * Detects lecture change and highlights it to the user
 
 ## Available Information
-Module, Start Time, End Time, Room
+* Module
+* Start Time
+* End Time
+* Room
 
 ## Dependencies
 **requests** (pip install requests)<br>
