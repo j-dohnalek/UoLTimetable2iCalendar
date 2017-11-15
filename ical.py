@@ -79,7 +79,7 @@ def cache_ical_events(events, delete_duplicate_cache):
 
             sql = "SELECT * FROM `event` WHERE `uid`=?"
             event = sqlite3db.DB().fetch(sql, (uid,))[0]
-            print 'Duplicate Cache ...{} {} {} {} {}'.format(e[0], e[1], e[2], e[3], e[3])
+            print 'Duplicate Cache ...{} {} {} {} {}'.format(e[0], e[1], e[2], e[3], e[4])
 
             # Delete the duplicates
             if delete_duplicate_cache:
