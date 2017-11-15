@@ -18,13 +18,9 @@ import re
 import hashlib
 from bs4 import BeautifulSoup
 
+
 # format of the outputted date of the lecture
 DATE_FORMAT = '%Y%m%dT%H%M00'
-
-# match pattern of standard module code
-# help to determine if the schedule event is something special
-# (i.e. Year in industry lecture)
-PATTERN = r'([A-Z]{4})([0-9]{3})'
 
 
 def parse_timetable(opener, blocks):
@@ -46,11 +42,13 @@ def parse_timetable(opener, blocks):
     # Fetch 28 day block
     for url in urls:
 
+        print 'Downloading', url
         resp = opener.open(url)
         soup = BeautifulSoup(resp.read(), 'lxml')
 
         # Fetch each event of the 28 day block details
         for link in soup.find_all('a'):
+
             if link.get('href')[:7] == 'Details':
 
                 # Isolate the event id
@@ -87,6 +85,7 @@ def parse_timetable(opener, blocks):
                     count_iteration += 1
                 e = Parser(event_info)
                 events.append(e)
+
     return events
 
 
