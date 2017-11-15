@@ -24,10 +24,14 @@ import sqlite3db
 # New line
 CRLF = '\r\n'
 
+# Date format of duplicate cache event
+EVENT_DATE_FORMAT = '%a %d-%b-%Y %H:%M:00'
+
 def print_event(e):
     """ print event """
-    print 'Event ... {} {} {}'.format(e.name, e.start, e.end)
-
+    start = vDatetime.from_ical(e.start).strftime(EVENT_DATE_FORMAT)
+    end = vDatetime.from_ical(e.end).strftime(EVENT_DATE_FORMAT)
+    print 'Event ... {} {} {}'.format(e.name, start, end)
 
 def cache_ical_events(events, delete_duplicate_cache):
     """ Generate cache events, filter new events , detect lecture changes """
@@ -47,7 +51,8 @@ def cache_ical_events(events, delete_duplicate_cache):
         if count == 0: # The event is not in database
             sql = 'INSERT INTO `event` (`uid`, `name`, `room`, `start`, `end`, `timestamp`) VALUES (?,?,?,?,?,?)'
             sqlite3db.DB().execute(sql, (e.uid, e.name, e.room, e.start, e.end, timestamp))
-            print 'Cached ... {} {} {}'.format(e.name, e.start, e.end)
+            start = vDatetime.from_ical(e.start).strftime(EVENT_DATE_FORMAT)
+            print 'New ... {} - {}'.format(start, e.name)
             new_events.append(e)
 
     # Select all events from the day queried
@@ -75,16 +80,20 @@ def cache_ical_events(events, delete_duplicate_cache):
                 cached_uid_events.remove(e.uid)
 
         # Display remaining duplicates
+        print '---- DUPLICATE EVENTS ------------------------------------------'
         for uid in cached_uid_events:
 
             sql = "SELECT * FROM `event` WHERE `uid`=?"
             event = sqlite3db.DB().fetch(sql, (uid,))[0]
-            print 'Duplicate Cache ...{} {} {} {} {}'.format(e[0], e[1], e[2], e[3], e[4])
+
+            start = vDatetime.from_ical(e[3]).strftime(DATE_FORMAT)
+            print 'Duplicate ... {} - {} {}'.format(start, e[1], e[2])
 
             # Delete the duplicates
             if delete_duplicate_cache:
                 sql = "DELETE FROM `event` WHERE `uid`=?"
                 event = sqlite3db.DB().execute(sql, (uid,))
+        print '----------------------------------------------------------------'
 
     return new_events
 
