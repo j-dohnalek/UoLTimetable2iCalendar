@@ -2,6 +2,9 @@
 Automatically download lecture timetable for computer science students and generate iCalendar file.
 The file is saved into the Downloads folder
 
+## Available Information
+Module, Start Time, End Time, Room
+
 ## Dependencies
 **requests** (pip install requests)<br>
 **BeautifulSoup** (pip install beautifulsoup4)
