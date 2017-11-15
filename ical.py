@@ -14,7 +14,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 import os
-
+from icalendar import vDatetime
+from datetime import datetime
 # New line
 CRLF = '\r\n'
 
@@ -33,11 +34,14 @@ def generate_ical(events, debug=False):
     for event in events:
 
         ical += 'BEGIN:VEVENT{}'.format(CRLF)
+        now = vDatetime(datetime.now()).to_ical()
+        ical += 'DTSTAMP:{}{}'.format(now, CRLF)
         ical += 'DTSTART:{}{}'.format(event.start, CRLF)
         ical += 'DTEND:{}{}'.format(event.end, CRLF)
         ical += 'ORGANIZER:{}{}'.format('University of Liverpool',CRLF)
         ical += 'SUMMARY: {}{}'.format(event.name, CRLF)
         ical += 'LOCATION:{}{}'.format('Liverpool UK', CRLF)
+        ical += 'DESCRIPTION:{}{}'.format(event.room, CRLF)
         ical += 'UID:{}{}'.format(event.uid, CRLF)
         ical += 'TZID:{}{}'.format('Europe/London', CRLF)
 
@@ -45,6 +49,7 @@ def generate_ical(events, debug=False):
         ical += 'BEGIN:VALARM{}'.format(CRLF)
         ical += 'TRIGGER:-PT5M{}'.format(CRLF)
         ical += 'ACTION:DISPLAY{}'.format(CRLF)
+        ical += 'DESCRIPTION:Reminder{}'.format(CRLF)
         ical += 'END:VALARM{}'.format(CRLF)
         ical += 'END:VEVENT{}'.format(CRLF)
 
