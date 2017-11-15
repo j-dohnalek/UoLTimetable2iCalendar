@@ -11,8 +11,11 @@ Module, Start Time, End Time, Room
 **BeautifulSoup** (pip install beautifulsoup4)
 
 ## Usage
-Edit the lines in main.py
-```python
+```
+python main.py -u <username> -p <password> -b <blocs>
+```
+
+```
 usage: main.py [-h] [--username USERNAME] [--password PASSWORD]
                [--blocks BLOCKS] [-d]
 
