@@ -15,19 +15,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 import requests
 import urllib, urllib2, cookielib
-from bs4 import BeautifulSoup
 
 # My own libraries
-from parser import Event
+from parser import parse_timetable
 import ical
 
 # University of Liverpool username
 USERNAME = '<USERNAME>'
+
 # Account password
 PASSWORD = '<PASSWORD>'
 
 # How many 28 days block to download?
-BLOCKS = 10
+BLOCKS = 1
 
 def login():
     """ LOGIN TO WEBSITE """
@@ -48,41 +48,14 @@ def login():
 
     return opener
 
-def filter_schedules(opener):
-    """
-    GET NEXT 28 DAYS
-    :param opener: access to the website including the session
-    :return filtered list of all events
-    """
-    events = []
-    urls = []
-    url = 'https://timetables.liv.ac.uk/Home/Next28Days'
-
-    for multiplier in range(0, BLOCKS):
-        now = datetime.datetime.now() + datetime.timedelta(days=28*multiplier)
-        next_date = now.strftime("%d%m%Y")
-        urls.append(url + '?date={}'.format(next_date))
-
-    for url in urls:
-        print 'Downloading', url
-        resp = opener.open(url)
-        soup = BeautifulSoup(resp.read(), 'lxml')
-
-        for link in soup.find_all('a'):
-            if link.get('href')[:7] == 'Details':
-                event = Event(link.contents[1], link.contents[3].text)
-                events.append(event)
-
-    return events
-
 
 def main():
     print "Attempting to log into the website"
     session = login()
-    print "Filtering events"
-    events = filter_schedules(session)
+    print "Filtering events, please wait ..."
+    events = parse_timetable(session, BLOCKS)
     print "Generating icalendar file"
-    ical.generate_ical(events, True)
+    ical.generate_ical(events)
     print "All Done"
 
 ################################################################################
