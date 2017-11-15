@@ -11,14 +11,21 @@ Module, Start Time, End Time, Room
 **BeautifulSoup** (pip install beautifulsoup4)
 
 ## Usage
-Edit the lines in main.py
-```python
-# University of Liverpool username
-USERNAME = '<USERNAME>'
+```
+python main.py -u <username> -p <password> -b <blocs>
+```
 
-# Account password
-PASSWORD = '<PASSWORD>'
+```
+usage: main.py [-h] [--username USERNAME] [--password PASSWORD]
+               [--blocks BLOCKS] [-d]
 
-# How many 28 days block to download?
-BLOCKS = 10
+optional arguments:
+  -h, --help            show this help message and exit
+  --username USERNAME, -u USERNAME
+                        UoL Username
+  --password PASSWORD, -p PASSWORD
+                        Password
+  --blocks BLOCKS, -b BLOCKS
+                        Number of 28 day blocks
+  -d, --delete          Delete duplicate cache events
 ```
