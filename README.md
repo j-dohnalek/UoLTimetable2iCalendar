@@ -18,6 +18,7 @@ The file is saved into the Downloads folder
 ## Dependencies
 **requests** (pip install requests)<br>
 **BeautifulSoup** (pip install beautifulsoup4)
+**iCalendar** (pip install icalendar)
 
 ## Usage
 ```
