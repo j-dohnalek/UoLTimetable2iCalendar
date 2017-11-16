@@ -4,7 +4,7 @@ The file is saved into the Downloads folder
 <p>Tested on Ubuntu Linux 16.04</p>
 
 ## Features
-* Download all lectures for a given number of 28 day blocks
+* Download all lectures for a given number of weeks
 * Saves files into ***.ical** file compatible with most calendar applications
 * Creates cache file to filter duplicate events before creating the ical file
 * Detects lecture change and highlights it to the user
