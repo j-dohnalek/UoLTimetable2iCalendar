@@ -1,5 +1,5 @@
 """
-SQLite database API 
+SQLite database API
 Copyright (C) 2017 Jiri Dohnalek
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ class DB:
             cur.execute(sql, args)
             self.con.commit()
 
-        except lite.OperationalError:
+        except sqlite3.OperationalError:
             self.con.close()
 
         finally:
@@ -114,7 +114,7 @@ class DB:
             cur.execute(sql, args)
             result = cur.fetchall()
 
-        except lite.OperationalError:
+        except sqlite3.OperationalError:
             self.con.close()
 
         finally:
