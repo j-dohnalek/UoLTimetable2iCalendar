@@ -26,16 +26,18 @@ python main.py -u <username> -p <password> -b <blocs>
 ```
 
 ```
-usage: main.py [-h] [--username USERNAME] [--password PASSWORD]
-               [--blocks BLOCKS] [-d]
+usage: main.py [-h] [-s] [--username USERNAME] [--password PASSWORD]
+               [--weeks WEEKS] [-d] [-r]
 
 optional arguments:
   -h, --help            show this help message and exit
+  -s, --passwd          Login using generated base64 encoded string
   --username USERNAME, -u USERNAME
                         UoL Username
   --password PASSWORD, -p PASSWORD
                         Password
-  --blocks BLOCKS, -b BLOCKS
-                        Number of 28 day blocks
+  --weeks WEEKS, -w WEEKS
+                        Number weeks to download
   -d, --delete          Delete duplicate cache events
+  -r, --remove-cache    Delete all cache events
 ```
