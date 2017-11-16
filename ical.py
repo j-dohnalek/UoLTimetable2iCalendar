@@ -33,6 +33,12 @@ def print_event(e):
     end = vDatetime.from_ical(e.end).strftime(EVENT_DATE_FORMAT)
     print 'Event ... {} {} {}'.format(e.name, start, end)
 
+def delete_cache():
+    """ Delete all cached events """
+    sql = "DELETE FROM `event` WHERE 1"
+    sqlite3db.DB().execute(sql)
+    print "Cache cleared"
+
 def cache_ical_events(events, delete_duplicate_cache):
     """ Generate cache events, filter new events , detect lecture changes """
 
@@ -83,16 +89,16 @@ def cache_ical_events(events, delete_duplicate_cache):
         print '---- DUPLICATE EVENTS ------------------------------------------'
         for uid in cached_uid_events:
 
-            sql = "SELECT * FROM `event` WHERE `uid`=?"
-            event = sqlite3db.DB().fetch(sql, (uid,))[0]
+            sql = "SELECT `start`, `name`, `room` FROM `event` WHERE `uid`=?"
+            e = sqlite3db.DB().fetch(sql, (uid,))[0]
 
-            start = vDatetime.from_ical(e[3]).strftime(DATE_FORMAT)
-            print 'Duplicate ... {} - {} {}'.format(start, e[1], e[2])
+            start = vDatetime.from_ical(e[0]).strftime(EVENT_DATE_FORMAT)
+            print 'Duplicate ... {} - {}, {}'.format(start, e[1], e[2])
 
             # Delete the duplicates
             if delete_duplicate_cache:
                 sql = "DELETE FROM `event` WHERE `uid`=?"
-                event = sqlite3db.DB().execute(sql, (uid,))
+                sqlite3db.DB().execute(sql, (uid,))
         print '----------------------------------------------------------------'
 
     return new_events
