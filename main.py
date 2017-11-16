@@ -1,5 +1,5 @@
 """
-Generate iCalendar Valid File
+Login to https://timetables.liv.ac.uk website and grab upcomming 28 days timetable
 Copyright (C) 2017  Jiri Dohnalek
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -13,140 +13,110 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
-import os
-from icalendar import vDatetime
-from datetime import datetime, date, time
-from time import mktime
+
+# IMPORTS ###################################################################
+
+import requests
+import urllib, urllib2, cookielib
+import argparse
 import sys
+import base64
 
-import sqlite3db
+from parser import parse_timetable
+import ical
 
-# New line
-CRLF = '\r\n'
+# CONSTANTS ###################################################################
 
-# Date format of duplicate cache event
-EVENT_DATE_FORMAT = '%a %d-%b-%Y %H:%M:00'
+SALT = "bv8fFhizx31HKwbI<G:6Z7)<0(m]5n1z).^X}!-;y0VS)55]f-Hi-)hv?3:[DC)r"
 
-def print_event(e):
-    """ print event """
-    start = vDatetime.from_ical(e.start).strftime(EVENT_DATE_FORMAT)
-    end = vDatetime.from_ical(e.end).strftime(EVENT_DATE_FORMAT)
-    print 'Event ... {} {} {}'.format(e.name, start, end)
+# FUNCTIONS ###################################################################
 
-def delete_cache():
-    """ Delete all cached events """
-    sql = "DELETE FROM `event` WHERE 1"
-    sqlite3db.DB().execute(sql)
-    print "Cache cleared"
+def login(username, password):
+    """ LOGIN TO WEBSITE """
+    session = requests.Session()
+    session.cookies.get_dict()
 
-def cache_ical_events(events, delete_duplicate_cache):
-    """ Generate cache events, filter new events , detect lecture changes """
+    login_url = 'https://timetables.liv.ac.uk/Home/Login'
+    values = {'username': username,
+              'password': password,
+              'action': 'login',
+              'submit':'continue' }
 
-    new_events = []
-    # Iterate over each event
-    for e in events:
+    cj = cookielib.CookieJar()
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 
-        # Timestamp
-        dt = vDatetime.from_ical(e.start)
-        timestamp = mktime(dt.timetuple())
+    login_data = urllib.urlencode(values)
+    opener.open(login_url, login_data)
 
-        # Count the number of times the event is at database
-        csql = "SELECT COUNT(*) FROM `event` WHERE `uid` = ?;"
-        count = int(sqlite3db.DB().fetch(csql, (e.uid,))[0][0])
-
-        if count == 0: # The event is not in database
-            sql = 'INSERT INTO `event` (`uid`, `name`, `room`, `start`, `end`, `timestamp`) VALUES (?,?,?,?,?,?)'
-            sqlite3db.DB().execute(sql, (e.uid, e.name, e.room, e.start, e.end, timestamp))
-            start = vDatetime.from_ical(e.start).strftime(EVENT_DATE_FORMAT)
-            print 'New ... {} - {}'.format(start, e.name)
-            new_events.append(e)
-
-    # Select all events from the day queried
-    midnight = datetime.combine(date.today(), time.min)
-    timestamp = mktime(midnight.timetuple())
-
-    sql = 'SELECT COUNT(*) FROM event WHERE `timestamp` > ?';
-    event_count = sqlite3db.DB().fetch(sql, (timestamp,))[0][0]
-
-    # The amount of event should always match to the amount of cached events
-    # If a lectrure is moved it will be cached twice, therefore will not match
-    # Get all the event from the cache and match them one by one with the
-    # cache, all the leftover events are duplicates print them to screen
-    if event_count != len(events):
-        cached_uid_events = []
-        sql = "SELECT `uid` FROM `event`"
-
-        # Get all event uids
-        for e in sqlite3db.DB().fetch(sql):
-            cached_uid_events.append(e[0])
-
-        # Cross reference the cache uids with event uids
-        for e in events:
-            if e.uid in cached_uid_events:
-                cached_uid_events.remove(e.uid)
-
-        # Display remaining duplicates
-        print '---- DUPLICATE EVENTS ------------------------------------------'
-        for uid in cached_uid_events:
-
-            sql = "SELECT `start`, `name`, `room` FROM `event` WHERE `uid`=?"
-            e = sqlite3db.DB().fetch(sql, (uid,))[0]
-
-            start = vDatetime.from_ical(e[0]).strftime(EVENT_DATE_FORMAT)
-            print 'Duplicate ... {} - {}, {}'.format(start, e[1], e[2])
-
-            # Delete the duplicates
-            if delete_duplicate_cache:
-                sql = "DELETE FROM `event` WHERE `uid`=?"
-                sqlite3db.DB().execute(sql, (uid,))
-        print '----------------------------------------------------------------'
-
-    return new_events
-
-def generate_ical(events, debug=False):
-    """ Generate iCalendar file from all events """
-
-    if len(events) == 0:
-        print "No new events registered"
-        return
+    return opener
 
 
-    ical = 'BEGIN:VCALENDAR' + CRLF
-    ical += 'VERSION:2.0' + CRLF
-    ical += 'PRODID:-//hacksw/handcal//NONSGML v1.0//EN' + CRLF
+def main():
 
-    # Iterate over each event
-    for event in events:
+    username = None
+    password = None
+    blocks = 1
+    delete_duplicate = False
 
-        ical += 'BEGIN:VEVENT{}'.format(CRLF)
-        now = vDatetime(datetime.now()).to_ical()
-        ical += 'DTSTAMP:{}{}'.format(now, CRLF)
-        ical += 'DTSTART:{}{}'.format(event.start, CRLF)
-        ical += 'DTEND:{}{}'.format(event.end, CRLF)
-        ical += 'ORGANIZER:{}{}'.format('University of Liverpool',CRLF)
-        ical += 'SUMMARY: {}{}'.format(event.name, CRLF)
-        ical += 'LOCATION:{}{}'.format('Liverpool UK', CRLF)
-        ical += 'DESCRIPTION:{}{}'.format(event.room, CRLF)
-        ical += 'UID:{}{}'.format(event.uid, CRLF)
-        ical += 'TZID:{}{}'.format('Europe/London', CRLF)
+    # Process the arguments ################################
 
-        # ALARM
-        ical += 'BEGIN:VALARM{}'.format(CRLF)
-        ical += 'TRIGGER:-PT5M{}'.format(CRLF)
-        ical += 'ACTION:DISPLAY{}'.format(CRLF)
-        ical += 'DESCRIPTION:Reminder{}'.format(CRLF)
-        ical += 'END:VALARM{}'.format(CRLF)
-        ical += 'END:VEVENT{}'.format(CRLF)
+    # initiate the parser
+    parser = argparse.ArgumentParser()
 
-        # Debug
-        if debug:
-            print_event(event)
+    # add long and short argument
+    parser.add_argument("-s", "--passwd", help="Login using generated base64 encoded string", action="store_true")
+    parser.add_argument("--username", "-u", help="UoL Username")
+    parser.add_argument("--password", "-p", help="Password")
+    parser.add_argument("--weeks", "-w", help="Number weeks to download")
+    parser.add_argument("-d", "--delete", help="Delete duplicate cache events", action="store_true")
+    parser.add_argument("-r", "--remove-cache", help="Delete all cache events", action="store_true")
 
-    ical += 'END:VCALENDAR' + CRLF
+    # read arguments from the command line
+    args = parser.parse_args()
 
-    directory = os.path.expanduser('~/Downloads/')
-    path = os.path.join(directory, 'uol_timetable.ics')
-    f = open(path, 'wb')
-    f.write(ical)
-    f.close()
-    print 'File saved at', path
+    # check for --width
+    if args.username:
+        username = args.username
+
+    if args.password:
+        password = args.password
+
+    if args.weeks:
+        blocks = int(args.weeks)
+
+    if args.delete:
+        delete_duplicate = True
+
+    if args.remove_cache:
+        ical.delete_cache()
+        delete_duplicate = False
+
+    if args.passwd:
+        # Login using upasswd file
+        f = open('passwd', 'r')
+        creds = f.read().split(':')
+        username = base64.decodestring(creds[0]).replace(SALT,'')
+        password = base64.decodestring(creds[1]).replace(SALT,'')
+        username = base64.decodestring(username)
+        password = base64.decodestring(password)
+
+    if username is None or password is None:
+        print "run command: python main.py -h"
+        sys.exit(1)
+
+    # Execute the routines ################################
+
+    print "Attempting to log into the website"
+    session = login(username, password)
+    print "Filtering events, please wait"
+    events = parse_timetable(session, blocks)
+    print "Caching events, please wait"
+    cached_events = ical.cache_ical_events(events, delete_duplicate)
+    print "Generating icalendar file"
+    ical.generate_ical(cached_events)
+    print "Success"
+
+################################################################################
+
+if __name__ == '__main__':
+    main()
