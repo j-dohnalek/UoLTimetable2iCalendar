@@ -26,8 +26,16 @@ def decode(s):
 SALT = "bv8fFhizx31HKwbI<G:6Z7)<0(m]5n1z).^X}!-;y0VS)55]f-Hi-)hv?3:[DC)r"
 
 def main():
-    username = sys.argv[1]
-    password = sys.argv[2]
+
+    username = ''
+    password = ''
+
+    try:
+        username = sys.argv[1]
+        password = sys.argv[2]
+    except IndexError:
+        print "usage: python base64passwd.py <username> <password>"
+        sys.exit()
 
     base64_username = encode(encode(username) + SALT)
     base64_password = encode(encode(password) + SALT)
@@ -38,7 +46,6 @@ def main():
     f.write(w)
     f.close()
     print "Ok"
-
 
 ########################################################
 
