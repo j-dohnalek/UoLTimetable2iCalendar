@@ -25,17 +25,18 @@ DATE_FORMAT = '%Y%m%dT%H%M00'
 
 def parse_timetable(opener, blocks):
     """
-    GET NEXT 28 DAYS
+    GET NEXT WEEK/s
     :param opener: access to the website including the session
+    :param blocks: how many weeks to download
     :return filtered list of all events
     """
     events = []
     urls = []
-    url = 'https://timetables.liv.ac.uk/Home/Next28Days'
+    url = 'https://timetables.liv.ac.uk/Home/Next7Days'
     event_ids = []
 
     for multiplier in range(0, blocks):
-        now = datetime.now() + timedelta(days=28*multiplier)
+        now = datetime.now() + timedelta(days=7*multiplier)
         next_date = now.strftime("%d%m%Y")
         urls.append(url + '?date={}'.format(next_date))
 
