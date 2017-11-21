@@ -11,7 +11,7 @@ The file is saved into the Downloads folder
 * Create a base64 encoded strings with username and password for private login whilst downloading in public space.
 
 ## Generate Base64 login file
-```
+```Python
 # Generate login file
 python base64passwd.py <username> <password>
 # Run the program without need to type username or password in plaintext
@@ -30,7 +30,7 @@ python main.py -s
 **iCalendar** (pip install icalendar)
 
 ## Usage
-```
+```Python
 python main.py -u <username> -p <password> -b <blocs>
 ```
 
