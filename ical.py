@@ -27,11 +27,19 @@ CRLF = '\r\n'
 # Date format of duplicate cache event
 EVENT_DATE_FORMAT = '%a %d-%b-%Y %H:%M:00'
 
+
 def print_event(e):
     """ print event """
     start = vDatetime.from_ical(e.start).strftime(EVENT_DATE_FORMAT)
     end = vDatetime.from_ical(e.end).strftime(EVENT_DATE_FORMAT)
     print 'Event ... {} {} {}'.format(e.name, start, end)
+
+
+def is_event_cached(event_id):
+    sql = 'SELECT COUNT(*) FROM event WHERE `event_id` = ?'
+    event_count = sqlite3db.DB().fetch(sql, (event_id,))[0][0]
+    return event_count > 0
+
 
 def delete_cache():
     """ Delete all cached events """
@@ -39,12 +47,13 @@ def delete_cache():
     sqlite3db.DB().execute(sql)
     print "Cache cleared"
 
+
 def cache_ical_events(events, delete_duplicate_cache):
     """ Generate cache events, filter new events , detect lecture changes """
 
     new_events = []
     # Iterate over each event
-    for e in events:
+    for e in events['events']:
 
         # Timestamp
         dt = vDatetime.from_ical(e.start)
@@ -54,9 +63,13 @@ def cache_ical_events(events, delete_duplicate_cache):
         csql = "SELECT COUNT(*) FROM `event` WHERE `uid` = ?;"
         count = int(sqlite3db.DB().fetch(csql, (e.uid,))[0][0])
 
-        if count == 0: # The event is not in database
-            sql = 'INSERT INTO `event` (`uid`, `name`, `room`, `start`, `end`, `timestamp`) VALUES (?,?,?,?,?,?)'
-            sqlite3db.DB().execute(sql, (e.uid, e.name, e.room, e.start, e.end, timestamp))
+        if count == 0:  # The event is not in database
+            sql = """
+              INSERT INTO `event`
+              (`uid`, `name`, `room`, `start`, `end`, `timestamp`, `event_id`)
+              VALUES (?,?,?,?,?,?,?)
+              """
+            sqlite3db.DB().execute(sql, (e.uid, e.name, e.room, e.start, e.end, timestamp, e.event_id))
             start = vDatetime.from_ical(e.start).strftime(EVENT_DATE_FORMAT)
             print 'New ... {} - {}'.format(start, e.name)
             new_events.append(e)
@@ -72,44 +85,40 @@ def cache_ical_events(events, delete_duplicate_cache):
     # If a lectrure is moved it will be cached twice, therefore will not match
     # Get all the event from the cache and match them one by one with the
     # cache, all the leftover events are duplicates print them to screen
-    if event_count != len(events):
-        cached_uid_events = []
-        sql = "SELECT `uid` FROM `event`"
+    if event_count != len(events['event_ids']):
+        cached_event_ids = []
+        sql = "SELECT `event_id` FROM `event`"
 
         # Get all event uids
         for e in sqlite3db.DB().fetch(sql):
-            cached_uid_events.append(e[0])
+            cached_event_ids.append(e[0])
 
         # Cross reference the cache uids with event uids
-        for e in events:
-            if e.uid in cached_uid_events:
-                cached_uid_events.remove(e.uid)
+        for uid in events['event_ids']:
+            print uid
+            if uid in cached_event_ids:
+                cached_event_ids.remove(uid)
 
         # Display remaining duplicates
         print '---- DUPLICATE EVENTS ------------------------------------------'
-        for uid in cached_uid_events:
+        for event_id in cached_event_ids:
 
-            sql = "SELECT `start`, `name`, `room` FROM `event` WHERE `uid`=?"
-            e = sqlite3db.DB().fetch(sql, (uid,))[0]
+            sql = "SELECT `start`, `name`, `room` FROM `event` WHERE `event_id`=?"
+            e = sqlite3db.DB().fetch(sql, (event_id,))[0]
 
             start = vDatetime.from_ical(e[0]).strftime(EVENT_DATE_FORMAT)
             print 'Duplicate ... {} - {}, {}'.format(start, e[1], e[2])
 
             # Delete the duplicates
             if delete_duplicate_cache:
-                sql = "DELETE FROM `event` WHERE `uid`=?"
-                sqlite3db.DB().execute(sql, (uid,))
+                sql = "DELETE FROM `event` WHERE `event_id`=?"
+                sqlite3db.DB().execute(sql, (event_id),)
         print '----------------------------------------------------------------'
 
     return new_events
 
 def generate_ical(events, debug=False):
     """ Generate iCalendar file from all events """
-
-    if len(events) == 0:
-        print "No new events registered"
-        return
-
 
     ical = 'BEGIN:VCALENDAR' + CRLF
     ical += 'VERSION:2.0' + CRLF
@@ -123,7 +132,7 @@ def generate_ical(events, debug=False):
         ical += 'DTSTAMP:{}{}'.format(now, CRLF)
         ical += 'DTSTART:{}{}'.format(event.start, CRLF)
         ical += 'DTEND:{}{}'.format(event.end, CRLF)
-        ical += 'ORGANIZER:{}{}'.format('University of Liverpool',CRLF)
+        ical += 'ORGANIZER:{}{}'.format('University of Liverpool', CRLF)
         ical += 'SUMMARY: {}{}'.format(event.name, CRLF)
         ical += 'LOCATION:{}{}'.format('Liverpool UK', CRLF)
         ical += 'DESCRIPTION:{}{}'.format(event.room, CRLF)
