@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 import re
 import hashlib
 from bs4 import BeautifulSoup
-
+import ical
 
 # format of the outputted date of the lecture
 DATE_FORMAT = '%Y%m%dT%H%M00'
@@ -54,40 +54,44 @@ def parse_timetable(opener, blocks):
 
                 # Isolate the event id
                 event_id = link.get('href').replace('Details?event=','')
+                event_ids.append(event_id)
 
-                # Fetch the event id information
-                _url = 'https://timetables.liv.ac.uk/Home/Details?event={}'.format(event_id)
-                event_details = opener.open(_url)
-                html = event_details.read()
-                _soup = BeautifulSoup(html, 'lxml')
+                if not ical.is_event_cached(event_id):
 
-                # isolate the div containing information
-                event_div =  _soup.findAll("div", { "class" : "event" })[0]
+                    # Fetch the event id information
+                    _url = 'https://timetables.liv.ac.uk/Home/Details?event={}'.format(event_id)
+                    event_details = opener.open(_url)
+                    html = event_details.read()
+                    _soup = BeautifulSoup(html, 'lxml')
 
-                # Parse event name
-                event_name = event_div.find('h1').contents[0]
+                    # isolate the div containing information
+                    event_div =  _soup.findAll("div", { "class" : "event" })[0]
 
-                # Parse date
-                event_date = event_div.find('h2').contents[0]
+                    # Parse event name
+                    event_name = event_div.find('h1').contents[0]
 
-                # Parse the remaining information
-                info_map = {1: 'start', 3: 'end', 5: 'room', 7: 'module' }
-                event_info = {}
-                event_info['name'] = event_name
-                event_info['date'] = event_date
-                count_iteration = 0
+                    # Parse date
+                    event_date = event_div.find('h2').contents[0]
 
-                for tag in event_div.find_all('span'):
-                    if count_iteration % 2 != 0 and count_iteration < 9:
-                        try:
-                            event_info[info_map[count_iteration]] = tag.contents[0]
-                        except IndexError:
-                            event_info[info_map[count_iteration]] = ''
-                    count_iteration += 1
-                e = Parser(event_info)
-                events.append(e)
+                    # Parse the remaining information
+                    info_map = {1: 'start', 3: 'end', 5: 'room', 7: 'module' }
+                    event_info = {}
+                    event_info['name'] = event_name
+                    event_info['date'] = event_date
+                    event_info['event_id'] = event_id
+                    count_iteration = 0
 
-    return events
+                    for tag in event_div.find_all('span'):
+                        if count_iteration % 2 != 0 and count_iteration < 9:
+                            try:
+                                event_info[info_map[count_iteration]] = tag.contents[0]
+                            except IndexError:
+                                event_info[info_map[count_iteration]] = ''
+                        count_iteration += 1
+                    e = Parser(event_info)
+                    events.append(e)
+
+    return {'events': events, 'event_ids': event_ids}
 
 
 class Parser:
@@ -97,6 +101,8 @@ class Parser:
     __default_event = -1
 
     __event_types = ['lecture', 'laboratory', 'class test']
+
+    __event_id = None
 
     # Not parsed information provided from the website
     __name = None
@@ -124,11 +130,11 @@ class Parser:
     def parse_name(self):
         self.__name = self.__event_info['name']
         self.__room = self.__event_info['room']
+        self.__event_id = self.__event_info['event_id']
 
         for event_type in self.__event_types:
             if event_type in self.__name.lower():
                 self.__default_event = event_type
-
 
     def parse_time(self):
         """ Parse the raw event time information to date and start & end time """
@@ -155,6 +161,11 @@ class Parser:
         return m.hexdigest()
 
     @property
+    def event_id(self):
+        """ Event website id """
+        return self.__event_id
+
+    @property
     def name(self):
         """ Event name """
         return self.__name
@@ -172,12 +183,10 @@ class Parser:
         """ Module """
         return self.__event_info['module']
 
-
     @property
     def room(self):
         """ end time of the lecture """
         return self.__room
-
 
     @property
     def start(self):
