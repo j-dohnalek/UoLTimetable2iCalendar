@@ -46,13 +46,17 @@ def login(username, password):
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 
     login_data = urllib.urlencode(values)
-    opener.open(login_url, login_data)
+    try:
+        opener.open(login_url, login_data)
+    except urllib2.URLError:
+        print "No internet connection"
+        sys.exit()
 
     return opener
 
 
 def main():
-
+    """ Execute all the routines """
     username = None
     password = None
     blocks = 1
@@ -111,10 +115,15 @@ def main():
     print "Filtering events, please wait"
     events = parse_timetable(session, blocks)
     print "Caching events, please wait"
-    cached_events = ical.cache_ical_events(events, delete_duplicate)
-    print "Generating icalendar file"
-    ical.generate_ical(cached_events)
-    print "Success"
+    new_events = ical.cache_ical_events(events, delete_duplicate)
+
+    if len(new_events) > 0:
+        print "Generating icalendar file"
+        ical.generate_ical(new_events)
+    else:
+        print "No new events detected"
+
+    print "Execution complete"
 
 ################################################################################
 
