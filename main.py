@@ -1,5 +1,5 @@
 """
-Login to https://timetables.liv.ac.uk website and grab upcomming 28 days timetable
+Login to https://timetables.liv.ac.uk website and obtain selected portion of timetable
 Copyright (C) 2017  Jiri Dohnalek
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
