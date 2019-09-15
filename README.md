@@ -10,12 +10,18 @@ The file is saved into the Downloads folder
 * Detects lecture change and highlights it to the user
 * Create a base64 encoded strings with username and password for private login whilst downloading in public space.
 
+## Generate cache table
+```Python
+# create table
+python create_table.py
+```
+
 ## Generate Base64 login file
 ```Python
 # Generate login file
 python base64passwd.py <username> <password>
 # Run the program without need to type username or password in plaintext
-python main.py -s 
+python main.py -s
 ```
 
 ## Available Information
