@@ -10,12 +10,6 @@ The file is saved into the Downloads folder
 * Detects lecture change and highlights it to the user
 * Create a base64 encoded strings with username and password for private login whilst downloading in public space.
 
-## Generate cache table
-```Python
-# create table
-python create_table.py
-```
-
 ## Generate Base64 login file
 ```Python
 # Generate login file
@@ -36,6 +30,15 @@ python main.py -s
 **iCalendar** (pip install icalendar)
 
 ## Usage
+
+### Generate cache table
+
+```Python
+# create table
+python create_table.py
+```
+### Get the iCalendar file
+
 ```Python
 python main.py -u <username> -p <password> -b <blocs>
 ```
