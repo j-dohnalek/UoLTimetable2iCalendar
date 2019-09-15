@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 from sqlite3 import Error
 import sqlite3
 import sys
+import os.path
 
 ########################################################################
 
@@ -36,7 +37,7 @@ def create_connection(db_file):
     :return: Connection object or None
     """
     try:
-        conn = sqlite3.connect(db_file, timeout=2)
+        conn = sqlite3.connect(db_file, timeout=2, isolation_level=None)
         return conn
     except Error as e:
         print(e)
@@ -49,6 +50,7 @@ def create_table(conn, create_table_sql):
     :param create_table_sql: a CREATE TABLE statement
     :return:
     """
+
     try:
         c = conn.cursor()
         c.execute(create_table_sql)
@@ -61,62 +63,38 @@ class DB:
 
     """ Connects to SQLite3 Database """
 
-    __sql_create = """CREATE TABLE IF NOT EXISTS `event` (
-                	`uid`	TEXT NOT NULL UNIQUE,
-                	`start`	TEXT NOT NULL,
-                	`end`	TEXT NOT NULL,
-                	`name`	TEXT NOT NULL,
-                	`room`	TEXT NOT NULL,
-                	`timestamp`	INTEGER NOT NULL
-                    );"""
-
     con = None
 
     def __init__(self):
-
         """  Constructor """
-        # create a database connection
-        conn = create_connection(DBSRC)
-        if conn is not None:
-            # create events table
-            create_table(conn, self.__sql_create)
-        else:
-            print("Error! cannot create the database connection.")
-
-        self.con = conn
+        try:
+            self.conn = sqlite3.connect(DBSRC, timeout=2)
+        except Error as e:
+            print(e)
 
     def execute(self, sql, args=()):
         """ execute insert update delete """
-
-        if self.con is None:
+        if self.conn is None:
             raise ValueError("No sqlite connection")
 
         try:
-            cur = self.con.cursor()
+            cur = self.conn.cursor()
             cur.execute(sql, args)
-            self.con.commit()
-
-        except sqlite3.OperationalError:
-            self.con.close()
-
+            self.conn.commit()
         finally:
-            self.con.close()
+            self.conn.close()
 
     def fetch(self, sql, args=()):
         """ execute select statements """
         result = None
 
-        if self.con is None:
+        if self.conn is None:
             raise ValueError("No sqlite connection")
 
         try:
-            cur = self.con.cursor()
+            cur = self.conn.cursor()
             cur.execute(sql, args)
             result = cur.fetchall()
-
-        except sqlite3.OperationalError:
-            self.con.close()
-
         finally:
-            self.con.close()
+            self.conn.close()
             return result

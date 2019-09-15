@@ -37,8 +37,12 @@ def print_event(e):
 
 def is_event_cached(event_id):
     sql = 'SELECT COUNT(*) FROM event WHERE `event_id` = ?'
-    event_count = sqlite3db.DB().fetch(sql, (event_id,))[0][0]
-    return event_count > 0
+    event_count = sqlite3db.DB().fetch(sql, (event_id,))
+
+    if event_count is None:
+        return False
+
+    return event_count[0][0] > 0
 
 
 def delete_cache():
@@ -90,12 +94,15 @@ def cache_ical_events(events, delete_duplicate_cache):
         sql = "SELECT `event_id` FROM `event`"
 
         # Get all event uids
+        if sqlite3db.DB().fetch(sql) is None:
+            print 'Can not cache events'
+            return new_events
+
         for e in sqlite3db.DB().fetch(sql):
             cached_event_ids.append(e[0])
 
         # Cross reference the cache uids with event uids
         for uid in events['event_ids']:
-            print uid
             if uid in cached_event_ids:
                 cached_event_ids.remove(uid)
 
